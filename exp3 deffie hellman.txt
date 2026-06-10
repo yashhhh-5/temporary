@@ -1,0 +1,66 @@
+EXP 3 Deffie hellman key exchnage
+Server.java
+import java.io.*;
+import java.net.*;
+import java.math.BigInteger;
+import java.util.Random;
+public class Server {
+ public static void main(String[] args) throws Exception {
+ ServerSocket ss = new ServerSocket(5000);
+ System.out.println("Server Waiting...");
+ Socket s = ss.accept();
+ BufferedReader in =
+ new BufferedReader(
+ new InputStreamReader(s.getInputStream()));
+ PrintWriter out =
+ new PrintWriter(s.getOutputStream(), true);
+ BigInteger p = new BigInteger(in.readLine());
+ BigInteger g = new BigInteger(in.readLine());
+ Random r = new Random();
+ BigInteger b = new BigInteger(5, r);
+ BigInteger B = g.modPow(b, p);
+ out.println(B);
+ BigInteger A = new BigInteger(in.readLine());
+ BigInteger key = A.modPow(b, p);
+ System.out.println("Server Private Key = " + b);
+ System.out.println("Server Public Key = " + B);
+ System.out.println("Shared Secret Key = " + key);
+ s.close();
+ ss.close();
+ }
+}
+
+
+Client.java
+import java.io.*;
+import java.net.*;
+import java.math.BigInteger;
+import java.util.*;
+public class Client {
+ public static void main(String[] args) throws Exception {
+ Socket s = new Socket("localhost", 5000);
+ BufferedReader in =
+ new BufferedReader(
+ new InputStreamReader(s.getInputStream()));
+ PrintWriter out =
+ new PrintWriter(s.getOutputStream(), true);
+ Scanner sc = new Scanner(System.in);
+ System.out.print("Enter Prime Number (p): ");
+ BigInteger p = new BigInteger(sc.nextLine());
+ System.out.print("Enter Generator (g): ");
+ BigInteger g = new BigInteger(sc.nextLine());
+ out.println(p);
+ out.println(g);
+ Random r = new Random();
+ BigInteger a = new BigInteger(5, r);
+ BigInteger A = g.modPow(a, p);
+ BigInteger B = new BigInteger(in.readLine());
+ out.println(A);
+ BigInteger key = B.modPow(a, p);
+ System.out.println("\nClient Private Key = " + a);
+ System.out.println("Client Public Key = " + A);
+ System.out.println("Server Public Key = " + B);
+ System.out.println("Shared Secret Key = " + key);
+ s.close();
+ }
+}

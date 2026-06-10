@@ -1,0 +1,135 @@
+exp 6
+
+PKIServer.java
+import java.io.*;
+import java.net.*;
+import java.security.*;
+import java.util.Base64;
+public class PKIServer {
+ public static void main(String[] args) {
+ try {
+ ServerSocket serverSocket =
+ new ServerSocket(5000);
+ System.out.println("University Exam Server Started...");
+ System.out.println("Waiting for College Client...");
+ Socket socket =
+ serverSocket.accept();
+ System.out.println("College Client Connected!");
+ DataOutputStream out =
+ new DataOutputStream(socket.getOutputStream());
+ // Generate RSA Key Pair
+ KeyPairGenerator keyPairGenerator =
+ KeyPairGenerator.getInstance("RSA");
+ keyPairGenerator.initialize(2048);
+ KeyPair keyPair =
+ keyPairGenerator.generateKeyPair();
+ PrivateKey privateKey =
+ keyPair.getPrivate();
+ PublicKey publicKey =
+ keyPair.getPublic();
+ // Question Paper
+ String questionPaper =
+ "UNIVERSITY EXAM PAPER: Explain PKI and Digital Signature.";
+ // Create Signature
+ Signature signature =
+ Signature.getInstance("SHA256withRSA");
+ signature.initSign(privateKey);
+ signature.update(questionPaper.getBytes());
+ byte[] digitalSignature =
+ signature.sign();
+ String signatureText =
+ Base64.getEncoder()
+ .encodeToString(digitalSignature);
+ String publicKeyText =
+ Base64.getEncoder()
+ .encodeToString(publicKey.getEncoded());
+ System.out.println("\nQuestion Paper:");
+ System.out.println(questionPaper);
+ System.out.println("\nDigital Signature Generated Successfully!");
+ // Send to client
+ out.writeUTF(questionPaper);
+ out.writeUTF(signatureText);
+ out.writeUTF(publicKeyText);
+ socket.close();
+ serverSocket.close();
+ } catch (Exception e) {
+ System.out.println("Server Error: " + e);
+ }
+ }
+}
+
+
+
+PKIClient.java
+import java.io.*;
+import java.net.*;
+import java.security.*;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
+import java.util.Scanner;
+public class PKIClient {
+public static void main(String[] args) {
+try {
+Socket socket =
+new Socket("localhost", 5000);
+System.out.println("Connected to University Exam Server!");
+DataInputStream in =
+new DataInputStream(socket.getInputStream());
+// Receive data
+String questionPaper =
+in.readUTF();
+String signatureText =
+in.readUTF();
+String publicKeyText =
+in.readUTF();
+System.out.println("\nReceived Question Paper:");
+System.out.println(questionPaper);
+Scanner sc = new Scanner(System.in);
+System.out.print("\nDo you want to tamper the document? yes/no: ");
+String choice =
+sc.nextLine();
+String verifyText =
+questionPaper;
+if (choice.equalsIgnoreCase("yes")) {
+System.out.print("Enter modified question paper: ");
+verifyText =
+sc.nextLine();
+}
+// Convert Public Key
+byte[] publicKeyBytes =
+Base64.getDecoder()
+.decode(publicKeyText);
+X509EncodedKeySpec keySpec =
+new X509EncodedKeySpec(publicKeyBytes);
+KeyFactory keyFactory =
+KeyFactory.getInstance("RSA");
+PublicKey publicKey =
+keyFactory.generatePublic(keySpec);
+// Verify Signature
+Signature signature =
+Signature.getInstance("SHA256withRSA");
+signature.initVerify(publicKey);
+signature.update(verifyText.getBytes());
+boolean verified =
+signature.verify(
+Base64.getDecoder()
+.decode(signatureText));
+System.out.println("\n===== Verification Result =====");
+if (verified) {
+System.out.println("Signature is VALID");
+System.out.println("Document is Authentic");
+System.out.println("Integrity Verified");
+System.out.println("No Tampering Detected");
+} else {
+System.out.println("Signature is INVALID");
+System.out.println("Document has been Altered");
+System.out.println("Integrity Verification Failed");
+}
+socket.close();
+sc.close();
+sssssss
+} catch (Exception e) {
+System.out.println("Client Error: " + e);
+}
+}
+}

@@ -1,0 +1,95 @@
+EXP 2 AES DES
+Server.java
+import java.io.*;
+import java.net.*;
+import java.util.Base64;
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
+public class Server {
+public static void main(String[] args) throws Exception {
+ServerSocket ss = new ServerSocket(5000);
+System.out.println("Server started. Waiting for client...");
+Socket s = ss.accept();
+System.out.println("Client connected.");
+BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
+PrintWriter out = new PrintWriter(s.getOutputStream(), true);
+String choice = in.readLine();
+String plaintext = in.readLine();
+String key = in.readLine();
+String algorithm = "";
+if (choice.equals("1")) {
+algorithm = "AES";
+} else if (choice.equals("2")) {
+algorithm = "DES";
+} else {
+out.println("Invalid choice");
+s.close();
+ss.close();
+return;
+}
+String encrypted = encrypt(plaintext, key, algorithm);
+String decrypted = decrypt(encrypted, key, algorithm);
+out.println("Algorithm Used: " + algorithm);
+out.println("Original Text: " + plaintext);
+out.println("Encrypted Text: " + encrypted);
+out.println("Decrypted Text: " + decrypted);
+s.close();
+ss.close();
+}
+static String encrypt(String text, String key, String algorithm) throws Exception {
+SecretKeySpec secretKey = new SecretKeySpec(key.getBytes(), algorithm);
+Cipher cipher = Cipher.getInstance(algorithm);
+cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+byte[] encryptedBytes = cipher.doFinal(text.getBytes());
+return Base64.getEncoder().encodeToString(encryptedBytes);
+}
+static String decrypt(String encryptedText, String key, String algorithm) throws Exception {
+SecretKeySpec secretKey = new SecretKeySpec(key.getBytes(), algorithm);
+Cipher cipher = Cipher.getInstance(algorithm);
+cipher.init(Cipher.DECRYPT_MODE, secretKey);
+byte[] decodedBytes = Base64.getDecoder().decode(encryptedText);
+byte[] decryptedBytes = cipher.doFinal(decodedBytes);
+return new String(decryptedBytes);
+}
+}
+
+Client.java
+import java.io.*;
+import java.net.*;
+import java.util.*;
+public class Client {
+public static void main(String[] args) throws Exception {
+Socket s = new Socket("localhost", 5000);
+BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
+PrintWriter out = new PrintWriter(s.getOutputStream(), true);
+Scanner sc = new Scanner(System.in);
+System.out.println("Choose Algorithm:");
+System.out.println("1. AES");
+System.out.println("2. DES");
+System.out.print("Enter choice: ");
+String choice = sc.nextLine();
+System.out.print("Enter exam question/plain text: ");
+String plaintext = sc.nextLine();
+String key = "";
+if (choice.equals("1")) {
+System.out.print("Enter AES key exactly 16 characters: ");
+key = sc.nextLine();
+} else if (choice.equals("2")) {
+System.out.print("Enter DES key exactly 8 characters: ");
+key = sc.nextLine();
+} else {
+System.out.println("Invalid choice");
+s.close();
+return;
+}
+out.println(choice);
+out.println(plaintext);
+out.println(key);
+System.out.println("\n--- Result from Server ---");
+System.out.println(in.readLine());
+System.out.println(in.readLine());
+System.out.println(in.readLine());
+System.out.println(in.readLine());
+s.close();
+}
+}

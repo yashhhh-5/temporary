@@ -1,0 +1,78 @@
+EXP 5 Digital Signature with RSA
+Server.java
+import java.io.*;
+import java.net.*;
+import java.security.*;
+import java.util.Base64;
+public class Server {
+public static void main(String[] args) throws Exception {
+ServerSocket ss = new ServerSocket(5000);
+System.out.println("Server Started...");
+System.out.println("Waiting for client...");
+Socket s = ss.accept();
+System.out.println("Client Connected.");
+ObjectOutputStream out =
+new ObjectOutputStream(s.getOutputStream());
+BufferedReader br =
+new BufferedReader(new InputStreamReader(System.in));
+System.out.print("Enter Exam Paper Text: ");
+String examPaper = br.readLine();
+KeyPairGenerator keyGen =
+KeyPairGenerator.getInstance("RSA");
+keyGen.initialize(2048);
+KeyPair pair = keyGen.generateKeyPair();
+PrivateKey privateKey = pair.getPrivate();
+PublicKey publicKey = pair.getPublic();
+Signature signature =
+Signature.getInstance("SHA256withRSA");
+signature.initSign(privateKey);
+signature.update(examPaper.getBytes());
+byte[] digitalSignature = signature.sign();
+out.writeObject(examPaper);
+out.writeObject(digitalSignature);
+out.writeObject(publicKey);
+System.out.println("\nExam Paper Sent: " + examPaper);
+System.out.println("Digital Signature: " +
+Base64.getEncoder().encodeToString(digitalSignature));
+System.out.println("Public Key Sent to Client.");
+out.close();
+s.close();
+ss.close();
+}
+}
+
+Client.java
+import java.io.*;
+import java.net.*;
+import java.security.*;
+import java.util.Base64;
+public class Client {
+public static void main(String[] args) throws Exception {
+Socket s = new Socket("localhost", 5000);
+ObjectInputStream in =
+new ObjectInputStream(s.getInputStream());
+String examPaper = (String) in.readObject();
+byte[] digitalSignature =
+(byte[]) in.readObject();
+PublicKey publicKey =
+(PublicKey) in.readObject();
+Signature signature =
+Signature.getInstance("SHA256withRSA");
+signature.initVerify(publicKey);
+signature.update(examPaper.getBytes());
+boolean verified =
+signature.verify(digitalSignature);
+System.out.println("Received Exam Paper: " + examPaper);
+System.out.println("Received Signature: " +
+Base64.getEncoder().encodeToString(digitalSignature));
+if (verified) {
+System.out.println("\nSignature Verified Successfully");
+System.out.println("Exam Paper is Genuine and Not Modified");
+} else {
+System.out.println("\nSignature Verification Failed");
+System.out.println("Exam Paper is Modified or Fake");
+}
+in.close();
+s.close();
+}
+}
